@@ -1,16 +1,16 @@
-// Authentic Product Database for Nucis & Co. aligned with Kasmeer Wala catalog
+// Authentic Product Database for Nucis & Co. with real Kasmeer Wala CDN images
 export const products = [
   {
     id: 'almonds-mamra',
     name: 'Mamra Almonds',
-    category: 'Badam',
+    category: 'Almonds',
     tag: 'Premium Natural',
     price: 999,
     originalPrice: 3598,
     discountPercent: 72,
     rating: 4.9,
     reviewsCount: 156,
-    image: 'https://images.unsplash.com/photo-1508061253366-f7da188bdf94?auto=format&fit=crop&q=80&w=600',
+    image: 'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:f-webp,w-600,fo-auto/692d715a8a7ab95790d6384a/template/1773218211322_EL2EI0NE5U_2026-03-11_1.jpg',
     description: 'Natural Mamra Badam rich in protein and fiber. Suitable for soaking, snacking and gifting.',
     nutrition: {
       calories: '579 kcal (per 100g)',
@@ -34,14 +34,14 @@ export const products = [
   {
     id: 'almonds-curved-mamra',
     name: 'Curved Mamra Almonds',
-    category: 'Badam',
+    category: 'Almonds',
     tag: 'Organic Nut Oil',
     price: 1299,
     originalPrice: 2998,
     discountPercent: 56,
     rating: 5.0,
     reviewsCount: 184,
-    image: 'https://images.unsplash.com/photo-1508061253366-f7da188bdf94?auto=format&fit=crop&q=80&w=600',
+    image: 'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:f-webp,w-600,fo-auto/692d715a8a7ab95790d6384a/cat_img/Curved_Mamra_Almonds_500g_Online___Premium_Kashmiri_Mamra_Badam___KASMEER_WALA_1H97CK5EPH_2026-05-17_1.png',
     description: 'Authentic Kashmiri Mamra almonds with healthy fats and protein.',
     nutrition: {
       calories: '595 kcal (per 100g)',
@@ -65,14 +65,14 @@ export const products = [
   {
     id: 'walnut-kernels-premium',
     name: 'Premium Kashmiri Walnut Kernels',
-    category: 'Walnut',
+    category: 'Walnuts',
     tag: 'Brain Superfood',
     price: 549,
     originalPrice: 1099,
     discountPercent: 50,
     rating: 4.8,
     reviewsCount: 112,
-    image: 'https://images.unsplash.com/photo-1601004890684-d8cbf643f5f2?auto=format&fit=crop&q=80&w=600',
+    image: 'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:f-webp,w-600,fo-auto/692d715a8a7ab95790d6384a/template/1773217486262_R9YHAUZXWM_2026-03-11_1.jpg',
     description: 'Organic walnut kernels rich in Omega-3 and protein.',
     nutrition: {
       calories: '654 kcal',
@@ -96,14 +96,14 @@ export const products = [
   {
     id: 'walnuts-kagzi-kashmiri',
     name: 'Kashmiri Kagzi Walnuts',
-    category: 'Walnut',
+    category: 'Walnuts',
     tag: 'Thin Shell Akhrot',
     price: 749,
     originalPrice: 1998,
     discountPercent: 62,
     rating: 4.7,
     reviewsCount: 94,
-    image: 'https://images.unsplash.com/photo-1601004890684-d8cbf643f5f2?auto=format&fit=crop&q=80&w=600',
+    image: 'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:f-webp,w-600,fo-auto/692d715a8a7ab95790d6384a/template/1773217486262_FZS4JOL8HP_2026-03-11_2.jpg',
     description: 'Thin-shell Himalayan walnuts rich in Omega-3.',
     nutrition: {
       calories: '630 kcal',
@@ -134,7 +134,7 @@ export const products = [
     discountPercent: 70,
     rating: 4.9,
     reviewsCount: 142,
-    image: 'https://images.unsplash.com/photo-1569870499742-7a37f97b404a?auto=format&fit=crop&q=80&w=600',
+    image: 'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:f-webp,w-600,fo-auto/692d715a8a7ab95790d6384a/template/1773217486262_XRPCK56P0R_2026-03-11_3.jpg',
     description: 'Premium imported dates, soft texture, rich in fiber and iron.',
     nutrition: {
       calories: '282 kcal',
@@ -158,14 +158,14 @@ export const products = [
   {
     id: 'trail-mix-superfood',
     name: 'Trail Mix Superfood',
-    category: 'Seeds',
+    category: 'Trail Mix',
     tag: 'Protein Breakfast',
     price: 1649,
     originalPrice: 3299,
     discountPercent: 50,
     rating: 5.0,
     reviewsCount: 88,
-    image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&q=80&w=600',
+    image: 'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:f-webp,w-600,fo-auto/692d715a8a7ab95790d6384a/cat_img/FN_T89N_STHC_1766397091955_p763ku2ah8p20lo.jpg',
     description: 'Protein breakfast mix with almonds, seeds and berries.',
     nutrition: {
       calories: '498 kcal',
@@ -188,15 +188,15 @@ export const products = [
   },
   {
     id: 'dryfruit-combo-classic',
-    name: 'Dry Fruit Combo (750g)',
-    category: 'Gift Packs',
+    name: 'Dry Fruit Combo',
+    category: 'Combo',
     tag: 'Classic Walnut Almond Cashew',
     price: 1199,
     originalPrice: 3798,
     discountPercent: 68,
     rating: 4.8,
     reviewsCount: 76,
-    image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&q=80&w=600',
+    image: 'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:f-webp,w-600,fo-auto/692d715a8a7ab95790d6384a/template/1773217486262_KV5GR58ZQP_2026-03-11_4.jpg',
     description: 'Mixed premium dry fruits combo containing Walnut 250g + Almond 250g + Cashew 250g.',
     nutrition: {
       calories: 'Assorted Premium Blend',
@@ -219,15 +219,15 @@ export const products = [
   },
   {
     id: 'dryfruit-combo-luxury',
-    name: 'Dry Fruit Combo (1200g)',
-    category: 'Gift Packs',
+    name: 'Dry Fruit Combo',
+    category: 'Combo',
     tag: 'Luxury Velvet Box',
     price: 1499,
     originalPrice: 4598,
     discountPercent: 67,
     rating: 5.0,
     reviewsCount: 104,
-    image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&q=80&w=600',
+    image: 'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:f-webp,w-600,fo-auto/692d715a8a7ab95790d6384a/template/1766574927155_TIS0XA7DX3_2025-12-24_1.jpg',
     description: 'Mixed combo of walnuts 300g, cashews 400g and raisins 500g.',
     nutrition: {
       calories: 'Assorted Luxury Blend',
@@ -251,14 +251,14 @@ export const products = [
   {
     id: 'berries-mix-antioxidant',
     name: 'Berries Mix',
-    category: 'Seeds',
+    category: 'Healthy Mix',
     tag: 'Antioxidant Snack',
     price: 599,
     originalPrice: 1199,
     discountPercent: 50,
     rating: 4.8,
     reviewsCount: 92,
-    image: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&q=80&w=600',
+    image: 'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:f-webp,w-600,fo-auto/692d715a8a7ab95790d6384a/cat_img/2M_LJB9_0MV5_1766397083089_3rclupqcs122qlc.jpg',
     description: 'Antioxidant-rich healthy snack and immunity booster.',
     nutrition: {
       calories: '320 kcal',
@@ -289,7 +289,7 @@ export const products = [
     discountPercent: 65,
     rating: 4.9,
     reviewsCount: 68,
-    image: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&q=80&w=600',
+    image: 'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:f-webp,w-250,fo-auto/692d715a8a7ab95790d6384a/template/1766566019843_ICWU9H81SD_2025-12-24_1.jpg',
     description: 'Wild harvested berries high in natural omegas.',
     nutrition: {
       calories: '275 kcal',
@@ -320,7 +320,7 @@ export const products = [
     discountPercent: 28,
     rating: 4.6,
     reviewsCount: 116,
-    image: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&q=80&w=600',
+    image: 'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:f-webp,w-250,fo-auto/692d715a8a7ab95790d6384a/template/1766566019843_P8PISJ2BL9_2025-12-24_2.jpg',
     description: 'Breakfast mix with nuts, seeds and honey.',
     nutrition: {
       calories: '380 kcal',
@@ -344,14 +344,14 @@ export const products = [
   {
     id: 'saffron-kahwa-tea',
     name: 'Saffron Kahwa Green Tea',
-    category: 'Teas',
+    category: 'Tea',
     tag: 'Detox Saffron Tea',
     price: 499,
     originalPrice: 1598,
     discountPercent: 68,
     rating: 4.9,
     reviewsCount: 198,
-    image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&q=80&w=600',
+    image: 'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:f-webp,w-600,fo-auto/692d715a8a7ab95790d6384a/cat_img/KW_KH_2_1766397096765_3xfacwy5m19pbx2.jpg',
     description: 'Herbal Kashmiri detox tea with saffron.',
     nutrition: {
       calories: '2 kcal (per cup)',
@@ -377,7 +377,7 @@ export const products = [
 export const reviews = [
   { name: 'Aditya Sen', rating: 5, comment: 'Authentic Kashmiri Mamra almonds. Extremely high oil content and delicious crunch! Highly recommended.', date: 'May 12, 2026' },
   { name: 'Meera Kapoor', rating: 5, comment: 'The Saffron Kahwa Green Tea has such a deep, rich Pampore scent. Beautiful wellness product!', date: 'May 10, 2026' },
-  { name: 'Dr. Rajesh Patel', rating: 5, comment: 'Hagzi walnuts are superb! Very easy to break and extremely high oil count. Natural indeed.', date: 'May 04, 2026' },
+  { name: 'Dr. Rajesh Patel', rating: 5, comment: 'Kagzi walnuts are superb! Very easy to break and extremely high oil count. Natural indeed.', date: 'May 04, 2026' },
   { name: 'Simran Gill', rating: 4, comment: 'The Saudi dates are exceptionally soft and delicious. Sourced fresh indeed!', date: 'April 28, 2026' }
 ];
 
