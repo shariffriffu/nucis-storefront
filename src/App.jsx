@@ -130,6 +130,22 @@ export default function App() {
     return productsList.find(p => p.id === selectedProductId) || productsList[0];
   }, [productsList, selectedProductId]);
 
+  // Fetch Live Products from Backend
+  useEffect(() => {
+    const fetchLiveProducts = async () => {
+      try {
+        const response = await fetch('http://13.207.1.144:5000/api/products');
+        const json = await response.json();
+        if (json.success && json.data) {
+          setProductsList(json.data);
+        }
+      } catch (err) {
+        console.error('Failed to load products from server, using offline fallback:', err);
+      }
+    };
+    fetchLiveProducts();
+  }, []);
+
   // Toggle Dark/Light Mode on HTML body directly
   useEffect(() => {
     const root = window.document.documentElement;
@@ -288,12 +304,33 @@ export default function App() {
     setShowAddressForm(false);
   };
 
-  // Checkout process simulation
-  const handleCompleteOrder = () => {
+  // Checkout process connecting to live Express guest checkout
+  const handleCompleteOrder = async () => {
     setIsProcessingPayment(true);
-    
-    // Simulate Razorpay Gateway Modal flow
-    setTimeout(() => {
+
+    const cartItems = cart.map(item => ({
+      id: item.product.id,
+      quantity: item.quantity,
+      price: item.product.price,
+      weight: item.weight
+    }));
+
+    try {
+      const response = await fetch('http://13.207.1.144:5000/api/orders/guest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: addresses[selectedAddressIndex]?.name || 'Guest Customer',
+          totalAmount: cartTotal,
+          cartItems: cartItems
+        })
+      });
+
+      const json = await response.json();
+      if (!response.ok || !json.success) {
+        throw new Error(json.message || 'Server error processing order');
+      }
+
       // Deduct mock inventory stock in real-time
       setProductsList(prev => {
         return prev.map(p => {
@@ -305,9 +342,11 @@ export default function App() {
         });
       });
 
+      const backendOrder = json.data;
+
       // Assemble new completed order
       const newOrder = {
-        id: `ORD-${Math.floor(10000 + Math.random() * 90000)}`,
+        id: backendOrder.orderNumber || `ORD-${Math.floor(10000 + Math.random() * 90000)}`,
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         items: cart.map(item => {
           let multiplier = 1;
@@ -336,7 +375,50 @@ export default function App() {
       setIsProcessingPayment(false);
       setIsPaymentSuccess(true);
       setCart([]); // Clear Cart
-    }, 2500); // 2.5s payment process animation
+    } catch (err) {
+      console.error('Failed to submit order to live backend, falling back to simulated order:', err);
+      // Fallback checkout logic
+      setTimeout(() => {
+        setProductsList(prev => {
+          return prev.map(p => {
+            const cartItem = cart.find(c => c.product.id === p.id);
+            if (cartItem) {
+              return { ...p, inStock: Math.max(0, p.inStock - cartItem.quantity) };
+            }
+            return p;
+          });
+        });
+
+        const newOrder = {
+          id: `ORD-${Math.floor(10000 + Math.random() * 90000)}`,
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          items: cart.map(item => {
+            let multiplier = 1;
+            if (item.weight === '500g') multiplier = 1.9;
+            if (item.weight === '1kg') multiplier = 3.5;
+            return {
+              id: item.product.id,
+              name: item.product.name,
+              quantity: item.quantity,
+              weight: item.weight,
+              price: Math.round(item.product.price * multiplier)
+            };
+          }),
+          amount: cartTotal,
+          status: 'Confirmed',
+          deliveryDate: new Date(Date.now() + 48*60*60*1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          trackingStep: 1,
+          invoiceNo: `INV-2026-${Math.floor(10000 + Math.random() * 90000)}`
+        };
+
+        setUserPoints(prev => prev + Math.round(cartTotal / 10));
+        setUserOrders(prev => [newOrder, ...prev]);
+        setRecentOrderDetails(newOrder);
+        setIsProcessingPayment(false);
+        setIsPaymentSuccess(true);
+        setCart([]); // Clear Cart
+      }, 1500);
+    }
   };
 
   return (
