@@ -1,0 +1,125 @@
+AWS Account & Server Details
+
+========================================
+AWS ACCOUNT DETAILS
+========================================
+
+Account ID : 135053815335
+IAM Login URL :
+https://135053815335.signin.aws.amazon.com/console
+
+Admin Login
+Username : backend-admin
+Password : ***********
+
+========================================
+EC2 SERVER DETAILS
+========================================
+
+Instance Name : business-backend-server
+Instance Type : t3.medium
+Operating System : Ubuntu Server 22.04 LTS
+Region : ap-south-1
+
+Public IPv4 :
+Private IPv4 :
+Elastic IP :
+
+========================================
+SSH ACCESS
+========================================
+
+PEM File Name :
+business_prod_key.pem
+
+SSH Command :
+
+ssh -i business_prod_key.pem ubuntu@YOUR_PUBLIC_IP
+
+========================================
+BACKEND DETAILS
+========================================
+
+Backend Port : 5000
+Socket Port : 3000
+Nginx Ports : 80 / 443
+
+PM2 Process Name :
+business-api
+
+========================================
+DATABASE DETAILS
+========================================
+
+Database Engine : PostgreSQL
+RDS Endpoint :
+Database Name : businessdb
+Database Username : admin
+Database Password : ***********
+
+DATABASE_URL=
+postgresql://admin:PASSWORD@RDS_ENDPOINT:5432/businessdb
+
+========================================
+DOMAIN DETAILS
+========================================
+
+Main Domain :
+API Domain :
+
+Example :
+api.yourbusiness.com
+
+========================================
+SSL DETAILS
+========================================
+
+SSL Provider : Let's Encrypt
+Certbot Installed : Yes
+HTTPS Enabled : Yes
+
+========================================
+DEPLOYMENT COMMANDS
+========================================
+
+Start Backend :
+pm2 start src/app.js --name business-api
+
+Restart Backend :
+pm2 restart business-api
+
+Check Logs :
+pm2 logs
+
+Check Status :
+pm2 status
+
+========================================
+DEPLOYMENT SCRIPT
+========================================
+
+Run Deployment :
+
+bash deploy.sh
+
+========================================
+UPLOAD BUILD
+========================================
+
+Create TAR :
+
+tar -czf latest_build.tar.gz backend/
+
+Upload TAR :
+
+scp -i business_prod_key.pem latest_build.tar.gz ubuntu@YOUR_PUBLIC_IP:/home/ubuntu
+
+========================================
+IMPORTANT NOTES
+========================================
+
+- Keep PEM file safe
+- Never share AWS root credentials
+- Enable MFA for all IAM users
+- Backup database regularly
+- Restrict PostgreSQL access after deployment

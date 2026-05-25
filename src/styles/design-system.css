@@ -1,0 +1,104 @@
+:root {
+  /* Colors */
+  --bg-color: #0d1117;
+  --panel-bg: rgba(22, 27, 34, 0.7);
+  --border-color: rgba(48, 54, 61, 0.8);
+  --accent-color: #58a6ff;
+  --accent-glow: rgba(88, 166, 255, 0.2);
+  --text-primary: #f0f6fc;
+  --text-secondary: #8b949e;
+  --success: #3fb950;
+  --danger: #f85149;
+  --glass-border: rgba(255, 255, 255, 0.05);
+  
+  /* Fonts */
+  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-family: var(--font-main);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-panel:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px 0 rgba(88, 166, 255, 0.15);
+  border-color: var(--accent-glow);
+}
+
+/* Typography Enhancements */
+h1, h2, h3 {
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #58a6ff, #bc85ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Components Layouts */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  padding: 24px;
+}
+
+.card-stat {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.card-value {
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-color);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color);
+}

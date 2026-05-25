@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="https://cdn-icons-png.flaticon.com/512/3505/3505417.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nucis & Co. | Premium Dry Fruits & Luxury Wellness</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              serif: ['Playfair Display', 'serif'],
+              sans: ['Outfit', 'sans-serif'],
+            },
+            colors: {
+              luxuryGreen: {
+                50: '#f4f7f6',
+                100: '#e2eae6',
+                200: '#c5d7cf',
+                300: '#9cbcae',
+                400: '#6d9a86',
+                500: '#4f7d6a',
+                600: '#3e6353',
+                700: '#335145',
+                800: '#2c433b',
+                900: '#233932',
+                950: '#0f1d19',
+              },
+              luxuryGold: {
+                50: '#fefdeb',
+                100: '#fcf8c4',
+                200: '#faf18b',
+                300: '#f5e24a',
+                400: '#edd01e',
+                500: '#d7b30f',
+                600: '#b89009',
+                700: '#936a08',
+                800: '#7a540f',
+                900: '#694611',
+                950: '#3d2505',
+              },
+            }
+          }
+        }
+      }
+    </script>
+    
+    <style>
+      /* Hide standard scrollbars for a clean premium mobile app UI feel */
+      .scrollbar-none::-webkit-scrollbar {
+        display: none;
+      }
+      .scrollbar-none {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  </head>
+  <body class="bg-[#09100d] text-gray-200 antialiased font-sans overflow-x-hidden min-h-screen">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
