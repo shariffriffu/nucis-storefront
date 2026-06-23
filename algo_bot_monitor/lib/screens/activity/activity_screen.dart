@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../providers/activity_provider.dart';
 import '../../models/activity.dart';
+import '../../core/logger/app_logger.dart';
 
 class ActivityScreen extends ConsumerStatefulWidget {
   const ActivityScreen({super.key});
@@ -20,7 +21,14 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   final List<String> _filters = const ['ALL', 'ORDERS', 'SIGNALS', 'WARNINGS', 'ERRORS'];
 
   @override
+  void initState() {
+    super.initState();
+    logger.i('ActivityScreen: Initializing screen state');
+  }
+
+  @override
   void dispose() {
+    logger.i('ActivityScreen: Disposing screen state');
     _searchController.dispose();
     super.dispose();
   }
@@ -66,6 +74,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 TextField(
                   controller: _searchController,
                   onChanged: (val) {
+                    logger.i('ActivityScreen: Search query updated to: "$val"');
                     setState(() {
                       _searchQuery = val.trim();
                     });
@@ -77,6 +86,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         ? IconButton(
                             icon: const Icon(Icons.clear, size: 18),
                             onPressed: () {
+                              logger.i('ActivityScreen: Clearing search query');
                               _searchController.clear();
                               setState(() {
                                 _searchQuery = '';
@@ -112,6 +122,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         checkmarkColor: Colors.white,
                         onSelected: (selected) {
                           if (selected) {
+                            logger.i('ActivityScreen: Selected filter changed to $filter');
                             setState(() {
                               _selectedFilter = filter;
                               _expandedIndex = null; // collapse on filter change

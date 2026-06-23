@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
+import '../../core/logger/app_logger.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -11,39 +12,48 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _mobileController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
   @override
   void initState() {
     super.initState();
+    logger.i('LoginScreen: Initializing screen state');
     _loadRememberedCredentials();
   }
 
   Future<void> _loadRememberedCredentials() async {
+    logger.i('LoginScreen: Loading remembered credentials');
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final creds = await ref.read(authProvider.notifier).getRememberedCredentials();
       if (creds != null) {
-        _emailController.text = creds['email'] ?? '';
+        logger.i('LoginScreen: Credentials found for mobile: ${creds['mobile']}');
+        _mobileController.text = creds['mobile'] ?? '';
         _passwordController.text = creds['password'] ?? '';
+      } else {
+        logger.i('LoginScreen: No remembered credentials found');
       }
     });
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
+    logger.i('LoginScreen: Disposing screen state');
+    _mobileController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
   void _handleLogin() async {
     if (_formKey.currentState!.validate()) {
-      final email = _emailController.text.trim();
+      final mobile = _mobileController.text.trim();
       final password = _passwordController.text;
 
-      await ref.read(authProvider.notifier).login(email, password);
+      logger.i('LoginScreen: Initiating sign-in action for mobile: $mobile');
+      await ref.read(authProvider.notifier).login(mobile, password);
+    } else {
+      logger.w('LoginScreen: Validation failed during sign-in action');
     }
   }
 
@@ -105,21 +115,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
+                      controller: _mobileController,
+                      keyboardType: TextInputType.phone,
                       textInputAction: TextInputAction.next,
                       style: const TextStyle(fontSize: 15),
                       decoration: const InputDecoration(
-                        labelText: 'Email Address',
-                        prefixIcon: Icon(Icons.email_outlined, size: 20),
+                        labelText: 'Mobile Number',
+                        prefixIcon: Icon(Icons.phone_android_rounded, size: 20),
                         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
+                          return 'Please enter your mobile number';
                         }
-                        if (!value.contains('@') || !value.contains('.')) {
-                          return 'Please enter a valid email address';
+                        final phoneRegex = RegExp(r'^\+?[0-9\s\-]{7,15}$');
+                        if (!phoneRegex.hasMatch(value)) {
+                          return 'Please enter a valid mobile number';
                         }
                         return null;
                       },

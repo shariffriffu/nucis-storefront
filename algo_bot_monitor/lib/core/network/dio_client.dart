@@ -53,16 +53,17 @@ class DioClient {
     await Future.delayed(const Duration(milliseconds: 800));
 
     if (path.contains('/auth/login')) {
-      final email = data['email'] ?? '';
+      final mobile = data['mobile'] ?? '';
       final password = data['password'] ?? '';
       
-      if (email.contains('@') && password.length >= 6) {
+      final phoneRegex = RegExp(r'^\+?[0-9\s\-]{7,15}$');
+      if (phoneRegex.hasMatch(mobile) && password.length >= 6) {
         return Response(
           requestOptions: RequestOptions(path: path),
           data: {
             'token': 'demo_token_jwt_99887766554433',
             'user': {
-              'email': email,
+              'mobile': mobile,
               'name': 'AlgoBot Administrator',
             }
           } as T,
@@ -71,7 +72,7 @@ class DioClient {
       } else {
         return Response(
           requestOptions: RequestOptions(path: path),
-          data: {'message': 'Invalid credentials. Email must be valid, Password min 6 characters.'} as T,
+          data: {'message': 'Invalid credentials. Mobile number must be valid, Password min 6 characters.'} as T,
           statusCode: 400,
         );
       }

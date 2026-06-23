@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../models/trade.dart';
 import '../../models/strategy.dart';
+import '../../core/logger/app_logger.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -19,11 +20,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with SingleTi
   @override
   void initState() {
     super.initState();
+    logger.i('DashboardScreen: Initializing screen state');
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        logger.i('DashboardScreen: Selected Tab Index changed to ${_tabController.index}');
+      }
+    });
   }
 
   @override
   void dispose() {
+    logger.i('DashboardScreen: Disposing screen state');
     _tabController.dispose();
     super.dispose();
   }

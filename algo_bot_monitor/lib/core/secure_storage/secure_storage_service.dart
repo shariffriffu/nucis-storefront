@@ -7,7 +7,7 @@ class SecureStorageService {
   SecureStorageService._init();
 
   static const _keyToken = 'auth_token';
-  static const _keyEmail = 'remembered_email';
+  static const _keyMobile = 'remembered_mobile';
   static const _keyPassword = 'remembered_password';
 
   Future<void> writeToken(String token) async {
@@ -22,22 +22,22 @@ class SecureStorageService {
     await _storage.delete(key: _keyToken);
   }
 
-  Future<void> saveCredentials(String email, String password) async {
-    await _storage.write(key: _keyEmail, value: email);
+  Future<void> saveCredentials(String mobile, String password) async {
+    await _storage.write(key: _keyMobile, value: mobile);
     await _storage.write(key: _keyPassword, value: password);
   }
 
   Future<Map<String, String>?> getCredentials() async {
-    final email = await _storage.read(key: _keyEmail);
+    final mobile = await _storage.read(key: _keyMobile);
     final password = await _storage.read(key: _keyPassword);
-    if (email != null && password != null) {
-      return {'email': email, 'password': password};
+    if (mobile != null && password != null) {
+      return {'mobile': mobile, 'password': password};
     }
     return null;
   }
 
   Future<void> clearCredentials() async {
-    await _storage.delete(key: _keyEmail);
+    await _storage.delete(key: _keyMobile);
     await _storage.delete(key: _keyPassword);
   }
 }

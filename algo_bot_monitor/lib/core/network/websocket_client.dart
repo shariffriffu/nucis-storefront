@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as ws_status;
+import '../logger/app_logger.dart';
 
 enum ConnectionStatus { disconnected, connecting, connected }
 
@@ -27,6 +28,7 @@ class WebSocketClient {
   String _wsUrl = '';
 
   void configure({required bool demoMode, required String wsUrl}) {
+    logger.i('Configuring client (demoMode: $demoMode, wsUrl: $wsUrl)');
     _isDemoMode = demoMode;
     _wsUrl = wsUrl;
     disconnect();
@@ -34,8 +36,12 @@ class WebSocketClient {
   }
 
   void connect() {
-    if (_status == ConnectionStatus.connected || _status == ConnectionStatus.connecting) return;
+    if (_status == ConnectionStatus.connected || _status == ConnectionStatus.connecting) {
+      logger.w('Connect requested, but client is already $_status');
+      return;
+    }
     
+    logger.i('Initiating connection...');
     _updateStatus(ConnectionStatus.connecting);
 
     if (_isDemoMode) {
@@ -46,6 +52,7 @@ class WebSocketClient {
   }
 
   void disconnect() {
+    logger.i('Disconnecting client');
     _reconnectTimer?.cancel();
     _simulationTimer?.cancel();
     try {
@@ -55,6 +62,7 @@ class WebSocketClient {
   }
 
   void _updateStatus(ConnectionStatus newStatus) {
+    logger.i('Status updated from $_status to $newStatus');
     _status = newStatus;
     _statusController.add(newStatus);
   }
@@ -62,40 +70,47 @@ class WebSocketClient {
   void _connectToSocket() {
     try {
       if (_wsUrl.isEmpty) {
+        logger.w('Connection failed - wsUrl is empty');
         _updateStatus(ConnectionStatus.disconnected);
         _scheduleReconnect();
         return;
       }
+      logger.i('Connecting to WebSocket at $_wsUrl');
       _channel = WebSocketChannel.connect(Uri.parse(_wsUrl));
       _updateStatus(ConnectionStatus.connected);
 
       _channel!.stream.listen(
         (message) {
+          logger.d('Message received: $message');
           try {
             final data = jsonDecode(message);
             if (data is Map<String, dynamic>) {
               _controller.add(data);
             }
           } catch (e) {
-            // Json parse exception
+            logger.w('Failed to decode message: $e');
           }
         },
         onError: (err) {
+          logger.e('Stream onError triggered: $err');
           _updateStatus(ConnectionStatus.disconnected);
           _scheduleReconnect();
         },
         onDone: () {
+          logger.w('Stream onDone triggered (connection closed)');
           _updateStatus(ConnectionStatus.disconnected);
           _scheduleReconnect();
         },
       );
     } catch (e) {
+      logger.e('Exception in _connectToSocket: $e');
       _updateStatus(ConnectionStatus.disconnected);
       _scheduleReconnect();
     }
   }
 
   void _scheduleReconnect() {
+    logger.i('Scheduling reconnection in 5 seconds...');
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(const Duration(seconds: 5), () {
       connect();
@@ -103,9 +118,11 @@ class WebSocketClient {
   }
 
   void _startSimulation() {
+    logger.i('Starting simulation flow (simulating connection latency)');
     _simulationTimer?.cancel();
     // Simulate latency during connection
     _simulationTimer = Timer(const Duration(milliseconds: 800), () {
+      logger.i('Simulation connected (simulated event stream starting)');
       _updateStatus(ConnectionStatus.connected);
       
       _simulationTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
@@ -117,15 +134,17 @@ class WebSocketClient {
 
   void _generateSimulatedEvent() {
     final randVal = _random.nextDouble();
+    Map<String, dynamic> eventData;
+
     if (randVal < 0.6) {
       // 60% chance: live P&L fluctuating
       final pnlDelta = (_random.nextDouble() * 60.0) - 25.0; // -$25 to +$35
-      _controller.add({
+      eventData = {
         'type': 'ticker',
         'data': {
           'pnl': pnlDelta,
         }
-      });
+      };
     } else if (randVal < 0.85) {
       // 25% chance: activity feed item
       final activityTypes = ['entry', 'exit', 'warning', 'error'];
@@ -168,7 +187,7 @@ class WebSocketClient {
           break;
       }
 
-      _controller.add({
+      eventData = {
         'type': 'activity',
         'data': {
           'type': chosenType,
@@ -176,7 +195,7 @@ class WebSocketClient {
           'message': message,
           'details': details,
         }
-      });
+      };
     } else {
       // 15% chance: Completed trade execution
       final symbols = ['AAPL', 'TSLA', 'MSFT', 'NVDA', 'BTCUSDT'];
@@ -186,7 +205,7 @@ class WebSocketClient {
       final quantity = (5.0 + _random.nextInt(8) * 10).toDouble();
       final pnl = action == 'SELL' ? (_random.nextDouble() * 450.0) - 120.0 : 0.0;
       
-      _controller.add({
+      eventData = {
         'type': 'trade',
         'data': {
           'id': 't_sim_${DateTime.now().millisecondsSinceEpoch}',
@@ -197,7 +216,10 @@ class WebSocketClient {
           'timestamp': DateTime.now().toIso8601String(),
           'pnl': pnl,
         }
-      });
+      };
     }
+
+    logger.i('Message received: ${jsonEncode(eventData)}');
+    _controller.add(eventData);
   }
 }

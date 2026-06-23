@@ -9,6 +9,7 @@ import '../../widgets/connection_status_bar.dart';
 import '../../providers/websocket_provider.dart';
 import '../../core/network/websocket_client.dart';
 import '../../providers/auth_provider.dart';
+import '../../core/logger/app_logger.dart';
 
 class MainNavigationScreen extends ConsumerStatefulWidget {
   const MainNavigationScreen({super.key});
@@ -39,6 +40,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   @override
   void initState() {
     super.initState();
+    logger.i('MainNavigationScreen: Initializing screen state and WebSocket stream');
     // Initialize the WebSocket stream listener to trigger state updates globally
     ref.read(websocketStreamProvider);
   }
@@ -87,6 +89,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             icon: const Icon(Icons.logout_rounded, size: 20),
             tooltip: 'Logout',
             onPressed: () {
+              logger.i('MainNavigationScreen: User tapped Logout button');
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
@@ -94,11 +97,15 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                   content: const Text('Are you sure you want to sign out?'),
                   actions: [
                     TextButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        logger.i('MainNavigationScreen: User cancelled Logout');
+                        Navigator.pop(context);
+                      },
                       child: const Text('Cancel'),
                     ),
                     TextButton(
                       onPressed: () {
+                        logger.w('MainNavigationScreen: User confirmed Logout, signing out...');
                         Navigator.pop(context);
                         ref.read(authProvider.notifier).logout();
                       },
@@ -125,6 +132,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
+          logger.i('MainNavigationScreen: Navigation changed to index $index (${_titles[index]})');
           setState(() {
             _currentIndex = index;
           });

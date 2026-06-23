@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../models/trade.dart';
 import '../../core/database/local_database.dart';
+import '../../core/logger/app_logger.dart';
 
 class PositionsScreen extends ConsumerStatefulWidget {
   const PositionsScreen({super.key});
@@ -21,17 +22,25 @@ class _PositionsScreenState extends ConsumerState<PositionsScreen> with SingleTi
   @override
   void initState() {
     super.initState();
+    logger.i('PositionsScreen: Initializing screen state');
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        logger.i('PositionsScreen: Tab selected: ${_tabController.index == 0 ? "Active Holdings" : "Closed Positions"}');
+      }
+    });
     _loadClosedPositions();
   }
 
   @override
   void dispose() {
+    logger.i('PositionsScreen: Disposing screen state');
     _tabController.dispose();
     super.dispose();
   }
 
   Future<void> _loadClosedPositions() async {
+    logger.i('PositionsScreen: Fetching closed positions from LocalDatabase');
     setState(() {
       _isLoadingClosed = true;
     });
@@ -46,7 +55,9 @@ class _PositionsScreenState extends ConsumerState<PositionsScreen> with SingleTi
         _closedTrades = closed;
         _isLoadingClosed = false;
       });
-    } catch (_) {
+      logger.i('PositionsScreen: Successfully loaded ${closed.length} closed positions');
+    } catch (e) {
+      logger.e('PositionsScreen: Exception occurred while loading closed positions: $e');
       setState(() {
         _isLoadingClosed = false;
       });
@@ -59,6 +70,7 @@ class _PositionsScreenState extends ConsumerState<PositionsScreen> with SingleTi
     
     // Reload closed positions whenever a new trade triggers dashboard state changes
     ref.listen(dashboardProvider, (previous, next) {
+      logger.i('PositionsScreen: Dashboard state updated, reloading closed positions');
       _loadClosedPositions();
     });
 

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../models/trade.dart';
 import '../../core/database/local_database.dart';
 import '../../providers/dashboard_provider.dart';
+import '../../core/logger/app_logger.dart';
 
 class ChartsScreen extends ConsumerStatefulWidget {
   const ChartsScreen({super.key});
@@ -21,11 +22,19 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
   @override
   void initState() {
     super.initState();
+    logger.i('ChartsScreen: Initializing screen state');
     _loadChartData();
+  }
+
+  @override
+  void dispose() {
+    logger.i('ChartsScreen: Disposing screen state');
+    super.dispose();
   }
 
   // Reload data when entering the page or when state changes
   Future<void> _loadChartData() async {
+    logger.i('ChartsScreen: Loading chart data from database');
     setState(() {
       _isLoading = true;
     });
@@ -35,7 +44,9 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
         _trades = dbTrades.map((m) => Trade.fromMap(m)).toList();
         _isLoading = false;
       });
-    } catch (_) {
+      logger.i('ChartsScreen: Successfully loaded ${_trades.length} trades for analytics');
+    } catch (e) {
+      logger.e('ChartsScreen: Exception while loading chart data: $e');
       setState(() {
         _isLoading = false;
       });
@@ -46,6 +57,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
   Widget build(BuildContext context) {
     // Watch dashboard provider to trigger reload on new trade execution ticks
     ref.listen(dashboardProvider, (previous, next) {
+      logger.i('ChartsScreen: Live dashboard data updated, reloading chart data');
       _loadChartData();
     });
 
@@ -126,6 +138,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
     return Expanded(
       child: GestureDetector(
         onTap: () {
+          logger.i('ChartsScreen: Switching chart period view to: $label');
           setState(() {
             _selectedPeriodIndex = index;
           });
