@@ -1,6 +1,6 @@
 import json
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -86,17 +86,53 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
     return new_user
 
 
-@router.post("/login", response_model=TokenResponse)
-def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
+@router.post("/login")
+async def login(
+    request: Request,
     db: Session = Depends(get_db)
 ):
-    # Form data username is our email
-    user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    # Determine content type and extract username (or mobile) and password
+    content_type = request.headers.get("content-type", "")
+    username = None
+    password = None
+    
+    if "application/json" in content_type:
+        try:
+            body = await request.json()
+            username = body.get("mobile") or body.get("username") or body.get("email")
+            password = body.get("password")
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid JSON payload format."
+            )
+    else:
+        # Fall back to form data (OAuth2PasswordRequestForm)
+        try:
+            form = await request.form()
+            username = form.get("username")
+            password = form.get("password")
+        except Exception:
+            pass
+
+    if not username or not password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect email or password"
+            detail="Missing username/mobile or password."
+        )
+
+    # Perform DB lookups:
+    # 1. Search directly by email
+    user = db.query(User).filter(User.email == username).first()
+    
+    # 2. If not found and username is a phone number, search by mapping (e.g. email starts with mobile)
+    if not user:
+        user = db.query(User).filter(User.email.like(f"{username}%")).first()
+
+    if not user or not verify_password(password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect email/mobile or password"
         )
     
     # Tokens
@@ -117,7 +153,15 @@ def login(
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
-        "token_type": "bearer"
+        "token_type": "bearer",
+        
+        # Mobile app fields:
+        "token": access_token,
+        "user": {
+            "name": user.email.split("@")[0].capitalize(),
+            "mobile": username if username.isdigit() else "",
+            "role": user.role
+        }
     }
 
 

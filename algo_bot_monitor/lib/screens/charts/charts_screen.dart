@@ -61,7 +61,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
       _loadChartData();
     });
 
-    final currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 0);
+    final currencyFormat = NumberFormat.currency(symbol: '₹', decimalDigits: 0);
 
     return Scaffold(
       body: _isLoading

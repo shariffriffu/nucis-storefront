@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:dio/dio.dart';
 import '../../providers/dashboard_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../core/network/dio_client.dart';
 import '../../models/trade.dart';
-import '../../core/database/local_database.dart';
 import '../../core/logger/app_logger.dart';
 
 class PositionsScreen extends ConsumerStatefulWidget {
@@ -15,7 +17,7 @@ class PositionsScreen extends ConsumerStatefulWidget {
 
 class _PositionsScreenState extends ConsumerState<PositionsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final NumberFormat _currencyFormat = NumberFormat.currency(symbol: '\$');
+  final NumberFormat _currencyFormat = NumberFormat.currency(symbol: '₹');
   List<Trade> _closedTrades = [];
   bool _isLoadingClosed = true;
 
@@ -40,16 +42,44 @@ class _PositionsScreenState extends ConsumerState<PositionsScreen> with SingleTi
   }
 
   Future<void> _loadClosedPositions() async {
-    logger.i('PositionsScreen: Fetching closed positions from LocalDatabase');
+    logger.i('PositionsScreen: Fetching closed positions');
     setState(() {
       _isLoadingClosed = true;
     });
     try {
-      final dbTrades = await LocalDatabase.instance.getTrades();
-      final trades = dbTrades.map((m) => Trade.fromMap(m)).toList();
-      
-      // Filter closed positions: SELL actions (representing closing buy entries) or trades with non-zero realized P&L
-      final closed = trades.where((t) => t.action == 'SELL' || t.pnl != 0.0).toList();
+      final authState = ref.read(authProvider);
+
+      List<Trade> closed = [];
+
+      if (authState.isAuthenticated) {
+        logger.i('PositionsScreen: Live Mode - Querying closed positions from backend');
+        final token = authState.token;
+        final options = Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        );
+        final response = await DioClient.instance.get(
+          '/api/mobile/closed-positions',
+          options: options,
+        );
+
+        if (response.statusCode == 200 && response.data != null) {
+          final closedList = response.data as List<dynamic>;
+          closed = closedList.map((item) {
+            final map = item as Map<String, dynamic>;
+            return Trade(
+              id: map['id']?.toString() ?? 'c_${map['symbol']}_${map['closed_at']}',
+              symbol: map['symbol'] as String,
+              action: 'SELL',
+              price: (map['exit_price'] as num).toDouble(),
+              quantity: (map['qty'] as num).toDouble(),
+              timestamp: DateTime.parse(map['closed_at'].toString()).toLocal(),
+              pnl: (map['pnl'] as num).toDouble(),
+            );
+          }).toList();
+        }
+      }
 
       setState(() {
         _closedTrades = closed;

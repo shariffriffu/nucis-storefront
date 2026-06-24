@@ -13,7 +13,10 @@ from backend.schemas import (
     WidgetPayloadResponse,
     StrategyResponse,
     PositionState,
-    PnLPeriod
+    PnLPeriod,
+    TradeHistoryResponse,
+    OpenPositionResponse,
+    ClosedPositionResponse
 )
 from backend.utils.engine_state import state
 from backend.routers.trading import get_stock_price
@@ -246,3 +249,129 @@ def get_widget_payload(
         open_positions_count=len(stats["positions"]),
         last_filled_trade_text=last_filled_text
     )
+
+
+@router.get("/trade-history", response_model=list[TradeHistoryResponse])
+def get_mobile_trade_history(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    orders = db.query(Order).filter(
+        Order.user_id == current_user.id,
+        Order.status == "EXECUTED"
+    ).order_by(Order.created_at.asc()).all()
+    
+    symbol_buys = {}
+    trade_history = []
+    
+    for order in orders:
+        sym = order.symbol
+        if order.transaction_type == "BUY":
+            if sym not in symbol_buys:
+                symbol_buys[sym] = []
+            symbol_buys[sym].append({"qty": order.qty, "price": order.execution_price})
+        elif order.transaction_type == "SELL":
+            buys = symbol_buys.get(sym, [])
+            if buys:
+                total_buy_qty = sum(b["qty"] for b in buys)
+                total_buy_val = sum(b["qty"] * b["price"] for b in buys)
+                avg_buy_price = total_buy_val / total_buy_qty if total_buy_qty > 0 else 0.0
+                
+                pnl = order.qty * (order.execution_price - avg_buy_price)
+                exit_reason = "Target Profit Achieved" if pnl >= 0 else "Stop Loss Hit"
+                
+                trade_history.append(TradeHistoryResponse(
+                    symbol=sym,
+                    buy_price=avg_buy_price,
+                    sell_price=order.execution_price,
+                    qty=order.qty,
+                    pnl=pnl,
+                    exit_reason=exit_reason,
+                    timestamp=order.created_at
+                ))
+                
+                remaining_sell = order.qty
+                while remaining_sell > 0 and buys:
+                    first_buy = buys[0]
+                    if first_buy["qty"] <= remaining_sell:
+                        remaining_sell -= first_buy["qty"]
+                        buys.pop(0)
+                    else:
+                        first_buy["qty"] -= remaining_sell
+                        remaining_sell = 0
+                        
+    trade_history.reverse()
+    return trade_history
+
+
+@router.get("/open-positions", response_model=list[OpenPositionResponse])
+def get_mobile_open_positions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    stats = calculate_pnl_stats(db, current_user)
+    open_positions = []
+    
+    for pos in stats["positions"]:
+        entry_price = pos.buy_price
+        open_positions.append(OpenPositionResponse(
+            symbol=pos.symbol,
+            entry_price=entry_price,
+            market_price=pos.current_price,
+            qty=pos.qty,
+            stop_loss=entry_price * 0.98,
+            target=entry_price * 1.05,
+            pnl=pos.pnl
+        ))
+    return open_positions
+
+
+@router.get("/closed-positions", response_model=list[ClosedPositionResponse])
+def get_mobile_closed_positions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    orders = db.query(Order).filter(
+        Order.user_id == current_user.id,
+        Order.status == "EXECUTED"
+    ).order_by(Order.created_at.asc()).all()
+    
+    symbol_buys = {}
+    closed_positions = []
+    
+    for order in orders:
+        sym = order.symbol
+        if order.transaction_type == "BUY":
+            if sym not in symbol_buys:
+                symbol_buys[sym] = []
+            symbol_buys[sym].append({"qty": order.qty, "price": order.execution_price})
+        elif order.transaction_type == "SELL":
+            buys = symbol_buys.get(sym, [])
+            if buys:
+                total_buy_qty = sum(b["qty"] for b in buys)
+                total_buy_val = sum(b["qty"] * b["price"] for b in buys)
+                avg_buy_price = total_buy_val / total_buy_qty if total_buy_qty > 0 else 0.0
+                
+                pnl = order.qty * (order.execution_price - avg_buy_price)
+                
+                closed_positions.append(ClosedPositionResponse(
+                    symbol=sym,
+                    entry_price=avg_buy_price,
+                    exit_price=order.execution_price,
+                    qty=order.qty,
+                    pnl=pnl,
+                    closed_at=order.created_at
+                ))
+                
+                remaining_sell = order.qty
+                while remaining_sell > 0 and buys:
+                    first_buy = buys[0]
+                    if first_buy["qty"] <= remaining_sell:
+                        remaining_sell -= first_buy["qty"]
+                        buys.pop(0)
+                    else:
+                        first_buy["qty"] -= remaining_sell
+                        remaining_sell = 0
+                        
+    closed_positions.reverse()
+    return closed_positions

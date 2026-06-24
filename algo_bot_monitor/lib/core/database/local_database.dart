@@ -82,12 +82,12 @@ class LocalDatabase {
     // Insert initial activity logs
     final initialLogs = [
       {'type': 'warning', 'message': 'API connection latency high (280ms)', 'details': 'Binance US endpoint'},
-      {'type': 'entry', 'message': 'Strategy "RSI Mean Reversion" triggered Entry on TSLA', 'details': 'Price: \$220.50, Position: Long'},
-      {'type': 'buy', 'message': 'Executed BUY order #10892: TSLA 40 shares', 'details': 'Price: \$220.50, Total: \$8,820.00'},
-      {'type': 'entry', 'message': 'Strategy "MA Cross" triggered Entry on AAPL', 'details': 'Price: \$175.20, Position: Long'},
-      {'type': 'buy', 'message': 'Executed BUY order #10893: AAPL 50 shares', 'details': 'Price: \$175.20, Total: \$8,760.00'},
-      {'type': 'exit', 'message': 'Strategy "MA Cross" triggered Exit on AAPL', 'details': 'Price: \$178.50, Target Achieved'},
-      {'type': 'sell', 'message': 'Executed SELL order #10895: AAPL 50 shares', 'details': 'Price: \$178.50, Profit: +\$165.00'},
+      {'type': 'entry', 'message': 'Strategy "RSI Mean Reversion" triggered Entry on TSLA', 'details': 'Price: ₹220.50, Position: Long'},
+      {'type': 'buy', 'message': 'Executed BUY order #10892: TSLA 40 shares', 'details': 'Price: ₹220.50, Total: ₹8,820.00'},
+      {'type': 'entry', 'message': 'Strategy "MA Cross" triggered Entry on AAPL', 'details': 'Price: ₹175.20, Position: Long'},
+      {'type': 'buy', 'message': 'Executed BUY order #10893: AAPL 50 shares', 'details': 'Price: ₹175.20, Total: ₹8,760.00'},
+      {'type': 'exit', 'message': 'Strategy "MA Cross" triggered Exit on AAPL', 'details': 'Price: ₹178.50, Target Achieved'},
+      {'type': 'sell', 'message': 'Executed SELL order #10895: AAPL 50 shares', 'details': 'Price: ₹178.50, Profit: +₹165.00'},
       {'type': 'error', 'message': 'Polygon.io WebSockets buffer overflow, dropping frame', 'details': 'High volume tick spike'},
     ];
 

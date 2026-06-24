@@ -20,7 +20,7 @@ class WidgetNotifier extends Notifier<void> {
       await HomeWidget.saveWidgetData('balance', balance.toStringAsFixed(2));
       
       final tradeText = lastTradeAction.isNotEmpty
-          ? '$lastTradeAction $lastTradeSymbol @ \$${lastTradePrice.toStringAsFixed(2)}'
+          ? '$lastTradeAction $lastTradeSymbol @ ₹${lastTradePrice.toStringAsFixed(2)}'
           : 'No Trades Yet';
       await HomeWidget.saveWidgetData('lastTrade', tradeText);
       await HomeWidget.saveWidgetData('runningStatus', isRunning ? 'RUNNING' : 'STOPPED');

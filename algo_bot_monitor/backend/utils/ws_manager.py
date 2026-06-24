@@ -31,21 +31,27 @@ class ConnectionManager:
             logger.info(f"WebSocket client disconnected from channel: {channel}. Total: {len(self.active_connections[channel])}")
 
     async def broadcast(self, message: dict, channel: str):
+        # 1. Send to target channel
         if channel in self.active_connections:
-            # Create a copy of the set to avoid modification during iteration issues
             targets = list(self.active_connections[channel])
-            if not targets:
-                return
-            
-            # Broadcast to all connections on the channel
             for connection in targets:
                 try:
                     await connection.send_json(message)
                 except Exception as e:
                     logger.debug(f"Failed to send WS message on channel {channel}: {e}")
-                    # Remove broken connection
                     if connection in self.active_connections[channel]:
                         self.active_connections[channel].remove(connection)
+                        
+        # 2. Also forward to "all" channel if active
+        if "all" in self.active_connections:
+            targets_all = list(self.active_connections["all"])
+            for connection in targets_all:
+                try:
+                    await connection.send_json(message)
+                except Exception as e:
+                    logger.debug(f"Failed to send WS message on multiplex channel 'all': {e}")
+                    if connection in self.active_connections["all"]:
+                        self.active_connections["all"].remove(connection)
 
 # Global singleton connection manager
 manager = ConnectionManager()

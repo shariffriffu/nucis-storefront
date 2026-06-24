@@ -102,7 +102,7 @@ app.include_router(admin.router)
 # 5. Streaming WebSockets Endpoint
 @app.websocket("/ws/{channel}")
 async def websocket_endpoint(websocket: WebSocket, channel: str):
-    valid_channels = ["pnl", "trades", "orders", "system"]
+    valid_channels = ["pnl", "trades", "orders", "system", "all"]
     if channel not in valid_channels:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return

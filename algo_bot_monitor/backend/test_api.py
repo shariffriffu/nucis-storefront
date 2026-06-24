@@ -301,3 +301,43 @@ def test_health_and_metrics_endpoints():
     metrics_resp = client.get("/metrics")
     assert metrics_resp.status_code == 200
     assert "http_requests_total" in metrics_resp.text
+
+
+def test_new_synced_endpoints():
+    login_resp = client.post("/api/auth/login", data={
+        "username": "user@example.com",
+        "password": "userpassword"
+    })
+    token = login_resp.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 1. Trade history
+    history_resp = client.get("/api/mobile/trade-history", headers=headers)
+    assert history_resp.status_code == 200
+    assert isinstance(history_resp.json(), list)
+
+    # 2. Open positions
+    open_pos_resp = client.get("/api/mobile/open-positions", headers=headers)
+    assert open_pos_resp.status_code == 200
+    assert isinstance(open_pos_resp.json(), list)
+
+    # 3. Closed positions
+    closed_pos_resp = client.get("/api/mobile/closed-positions", headers=headers)
+    assert closed_pos_resp.status_code == 200
+    assert isinstance(closed_pos_resp.json(), list)
+
+    # 4. Watchlist
+    watchlist_resp = client.get("/api/watchlist", headers=headers)
+    assert watchlist_resp.status_code == 200
+    assert "watchlist" in watchlist_resp.json()
+
+    # 5. Strategies configurations
+    strat_resp = client.get("/api/strategies", headers=headers)
+    assert strat_resp.status_code == 200
+    assert isinstance(strat_resp.json(), list)
+
+    # 6. Toggle strategy
+    toggle_resp = client.post("/api/strategies/STG_MOMENTUM/toggle", headers=headers)
+    assert toggle_resp.status_code == 200
+    assert toggle_resp.json()["enabled"] is False # toggled from true to false
+

@@ -136,21 +136,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             const SizedBox(height: 16),
 
-             // Demo Mode switch card
-            Card(
-              child: SwitchListTile(
-                title: const Text('Demo Mode / Ticker Simulator', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                subtitle: const Text('Feeds simulated ticks, signals, and trades for demonstration.', style: TextStyle(fontSize: 11, color: Color(0xFF8E92B2))),
-                value: settings.isDemoMode,
-                activeColor: const Color(0xFF6366F1),
-                onChanged: (val) {
-                  logger.i('SettingsScreen: Toggled Demo Mode to $val');
-                  ref.read(settingsProvider.notifier).toggleDemoMode(val);
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
-
             // Notification preferences card
             Card(
               child: Padding(

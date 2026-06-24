@@ -15,7 +15,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final NumberFormat _currencyFormat = NumberFormat.currency(symbol: '\$');
+  final NumberFormat _currencyFormat = NumberFormat.currency(symbol: '₹');
 
   @override
   void initState() {

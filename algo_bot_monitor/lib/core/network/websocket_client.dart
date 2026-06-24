@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as ws_status;
 import '../logger/app_logger.dart';
@@ -11,53 +10,49 @@ class WebSocketClient {
   static final WebSocketClient instance = WebSocketClient._init();
   WebSocketClient._init();
 
-  WebSocketChannel? _channel;
-  final StreamController<Map<String, dynamic>> _controller = StreamController<Map<String, dynamic>>.broadcast();
-  final StreamController<ConnectionStatus> _statusController = StreamController<ConnectionStatus>.broadcast();
+  final List<WebSocketChannel> _channels = [];
+  final StreamController<Map<String, dynamic>> _controller =
+      StreamController<Map<String, dynamic>>.broadcast();
+  final StreamController<ConnectionStatus> _statusController =
+      StreamController<ConnectionStatus>.broadcast();
 
   ConnectionStatus _status = ConnectionStatus.disconnected;
   Timer? _reconnectTimer;
-  Timer? _simulationTimer;
-  final Random _random = Random();
 
   Stream<Map<String, dynamic>> get stream => _controller.stream;
   Stream<ConnectionStatus> get statusStream => _statusController.stream;
   ConnectionStatus get status => _status;
 
-  bool _isDemoMode = true;
   String _wsUrl = '';
 
-  void configure({required bool demoMode, required String wsUrl}) {
-    logger.i('Configuring client (demoMode: $demoMode, wsUrl: $wsUrl)');
-    _isDemoMode = demoMode;
+  void configure({required String wsUrl}) {
+    logger.i('Configuring client (wsUrl: $wsUrl)');
     _wsUrl = wsUrl;
     disconnect();
     connect();
   }
 
   void connect() {
-    if (_status == ConnectionStatus.connected || _status == ConnectionStatus.connecting) {
+    if (_status == ConnectionStatus.connected ||
+        _status == ConnectionStatus.connecting) {
       logger.w('Connect requested, but client is already $_status');
       return;
     }
-    
+
     logger.i('Initiating connection...');
     _updateStatus(ConnectionStatus.connecting);
-
-    if (_isDemoMode) {
-      _startSimulation();
-    } else {
-      _connectToSocket();
-    }
+    _connectToSocket();
   }
 
   void disconnect() {
-    logger.i('Disconnecting client');
+    logger.i('Disconnecting client channels');
     _reconnectTimer?.cancel();
-    _simulationTimer?.cancel();
-    try {
-      _channel?.sink.close(ws_status.goingAway);
-    } catch (_) {}
+    for (final channel in _channels) {
+      try {
+        channel.sink.close(ws_status.goingAway);
+      } catch (_) {}
+    }
+    _channels.clear();
     _updateStatus(ConnectionStatus.disconnected);
   }
 
@@ -75,38 +70,152 @@ class WebSocketClient {
         _scheduleReconnect();
         return;
       }
-      logger.i('Connecting to WebSocket at $_wsUrl');
-      _channel = WebSocketChannel.connect(Uri.parse(_wsUrl));
+
+      // Close any existing channels first
+      for (final channel in _channels) {
+        try {
+          channel.sink.close();
+        } catch (_) {}
+      }
+      _channels.clear();
+
+      var baseUrl = _wsUrl;
+      // remove trailing slash if present
+      if (baseUrl.endsWith('/')) {
+        baseUrl = baseUrl.substring(0, baseUrl.length - 1);
+      }
+
+      final channelsToConnect = ['pnl', 'trades', 'orders', 'system'];
       _updateStatus(ConnectionStatus.connected);
 
-      _channel!.stream.listen(
-        (message) {
-          logger.d('Message received: $message');
-          try {
-            final data = jsonDecode(message);
-            if (data is Map<String, dynamic>) {
-              _controller.add(data);
-            }
-          } catch (e) {
-            logger.w('Failed to decode message: $e');
-          }
-        },
-        onError: (err) {
-          logger.e('Stream onError triggered: $err');
-          _updateStatus(ConnectionStatus.disconnected);
-          _scheduleReconnect();
-        },
-        onDone: () {
-          logger.w('Stream onDone triggered (connection closed)');
-          _updateStatus(ConnectionStatus.disconnected);
-          _scheduleReconnect();
-        },
-      );
+      for (final channelName in channelsToConnect) {
+        final targetUrl = '$baseUrl/$channelName';
+        logger.i('Connecting to WebSocket channel: $channelName at $targetUrl');
+
+        try {
+          final channel = WebSocketChannel.connect(Uri.parse(targetUrl));
+          _channels.add(channel);
+
+          channel.stream.listen(
+            (message) {
+              logger.d('[$channelName] Message received: $message');
+              try {
+                final data = jsonDecode(message);
+                if (data is Map<String, dynamic>) {
+                  final type = data['type'] as String?;
+                  final payload = data['data'];
+
+                  // Ensure the 'channel' key is set in our parsed data
+                  final Map<String, dynamic> enrichedData = Map.from(data);
+                  if (!enrichedData.containsKey('channel')) {
+                    enrichedData['channel'] = channelName;
+                  }
+
+                  if (type != null && payload is Map<String, dynamic>) {
+                    Map<String, dynamic>? mappedEvent;
+
+                    if (type == 'live_market_tick') {
+                      final change =
+                          (payload['nifty_pnl_change_percent'] as num?)?.toDouble() ?? 0.0;
+                      mappedEvent = {
+                        'type': 'ticker',
+                        'data': {'pnl': change * 100.0},
+                      };
+                    } else if (type == 'trade_filled') {
+                      mappedEvent = {
+                        'type': 'trade',
+                        'data': {
+                          'id': 't_${payload['symbol']}_${payload['timestamp']}',
+                          'symbol': payload['symbol']?.toString() ?? '',
+                          'action': payload['side']?.toString() ?? 'BUY',
+                          'price': (payload['price'] as num?)?.toDouble() ?? 0.0,
+                          'quantity': (payload['qty'] as num?)?.toDouble() ?? 0.0,
+                          'timestamp':
+                              payload['timestamp']?.toString() ??
+                              DateTime.now().toIso8601String(),
+                          'pnl': 0.0,
+                        },
+                      };
+                    } else if (type == 'system_status_update') {
+                      final cpu =
+                          (payload['cpu_percent'] as num?)?.toDouble() ?? 0.0;
+                      mappedEvent = {
+                        'type': 'activity',
+                        'data': {
+                          'type': cpu > 80.0 ? 'warning' : 'info',
+                          'timestamp':
+                              payload['timestamp']?.toString() ??
+                              DateTime.now().toIso8601String(),
+                          'message':
+                              'Engine: ${payload['engine_status']}, Broker: ${payload['broker_connection']}',
+                          'details':
+                              'CPU: ${cpu.toStringAsFixed(1)}%, RAM: ${((payload['memory_percent'] as num?)?.toDouble() ?? 0.0).toStringAsFixed(1)}%',
+                        },
+                      };
+                    } else if (type == 'order_update') {
+                      final statusStr = payload['status']?.toString() ?? 'EXECUTED';
+                      final txType =
+                          payload['transaction_type']?.toString() ?? 'BUY';
+                      final logType = statusStr == 'FAILED'
+                          ? 'error'
+                          : (txType == 'BUY' ? 'buy' : 'sell');
+                      mappedEvent = {
+                        'type': 'activity',
+                        'data': {
+                          'type': logType,
+                          'timestamp':
+                              payload['created_at']?.toString() ??
+                              DateTime.now().toIso8601String(),
+                          'message':
+                              'Order $statusStr: ${payload['symbol']} $txType ${payload['qty']} shares',
+                          'details':
+                              'Price: ₹${payload['execution_price']}, Order ID: ${payload['broker_order_id']}',
+                        },
+                      };
+                    }
+
+                    if (mappedEvent != null) {
+                      logger.i(
+                        'WebSocketClient: Mapped backend event $type to ${mappedEvent['type']}',
+                      );
+                      _controller.add(mappedEvent);
+                    } else {
+                      _controller.add(enrichedData);
+                    }
+                  } else {
+                    _controller.add(enrichedData);
+                  }
+                }
+              } catch (e) {
+                logger.w('Failed to decode message: $e');
+              }
+            },
+            onError: (err) {
+              logger.e('[$channelName] Stream onError triggered: $err');
+              _handleChannelFailure();
+            },
+            onDone: () {
+              logger.w('[$channelName] Stream onDone triggered (connection closed)');
+              _handleChannelFailure();
+            },
+          );
+        } catch (e) {
+          logger.e('Exception connecting to $channelName: $e');
+          _handleChannelFailure();
+        }
+      }
     } catch (e) {
       logger.e('Exception in _connectToSocket: $e');
       _updateStatus(ConnectionStatus.disconnected);
       _scheduleReconnect();
     }
+  }
+
+  void _handleChannelFailure() {
+    if (_status == ConnectionStatus.connected) {
+      _updateStatus(ConnectionStatus.disconnected);
+    }
+    _scheduleReconnect();
   }
 
   void _scheduleReconnect() {
@@ -115,111 +224,5 @@ class WebSocketClient {
     _reconnectTimer = Timer(const Duration(seconds: 5), () {
       connect();
     });
-  }
-
-  void _startSimulation() {
-    logger.i('Starting simulation flow (simulating connection latency)');
-    _simulationTimer?.cancel();
-    // Simulate latency during connection
-    _simulationTimer = Timer(const Duration(milliseconds: 800), () {
-      logger.i('Simulation connected (simulated event stream starting)');
-      _updateStatus(ConnectionStatus.connected);
-      
-      _simulationTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
-        if (_status != ConnectionStatus.connected) return;
-        _generateSimulatedEvent();
-      });
-    });
-  }
-
-  void _generateSimulatedEvent() {
-    final randVal = _random.nextDouble();
-    Map<String, dynamic> eventData;
-
-    if (randVal < 0.6) {
-      // 60% chance: live P&L fluctuating
-      final pnlDelta = (_random.nextDouble() * 60.0) - 25.0; // -$25 to +$35
-      eventData = {
-        'type': 'ticker',
-        'data': {
-          'pnl': pnlDelta,
-        }
-      };
-    } else if (randVal < 0.85) {
-      // 25% chance: activity feed item
-      final activityTypes = ['entry', 'exit', 'warning', 'error'];
-      final chosenType = activityTypes[_random.nextInt(activityTypes.length)];
-      
-      String message = '';
-      String details = '';
-      
-      final symbols = ['AAPL', 'TSLA', 'MSFT', 'NVDA', 'BTCUSDT'];
-      final symbol = symbols[_random.nextInt(symbols.length)];
-
-      switch (chosenType) {
-        case 'entry':
-          final side = _random.nextBool() ? 'Long' : 'Short';
-          message = 'Strategy "MACD Scalper" triggered Entry on $symbol';
-          details = 'Price: \$${(130 + _random.nextDouble() * 250).toStringAsFixed(2)}, Position: $side';
-          break;
-        case 'exit':
-          final profit = _random.nextBool() ? 'Target Achieved' : 'Stop Loss Triggered';
-          message = 'Strategy "MACD Scalper" triggered Exit on $symbol';
-          details = 'Price: \$${(130 + _random.nextDouble() * 250).toStringAsFixed(2)}, $profit';
-          break;
-        case 'warning':
-          final warnings = [
-            'API threshold hit: 75 req/sec',
-            'High websocket latency detected: 340ms',
-            'Order slippage on $symbol exceeds set limit'
-          ];
-          message = warnings[_random.nextInt(warnings.length)];
-          details = 'Severity: Low, Module: Executor';
-          break;
-        case 'error':
-          final errors = [
-            'Exchange API reject: Margin call threshold warning',
-            'Connection timed out while sending buy block',
-            'Failed to execute stop-limit for $symbol'
-          ];
-          message = errors[_random.nextInt(errors.length)];
-          details = 'Severity: Critical, Code: ERR_EXCHANGE_REJECT';
-          break;
-      }
-
-      eventData = {
-        'type': 'activity',
-        'data': {
-          'type': chosenType,
-          'timestamp': DateTime.now().toIso8601String(),
-          'message': message,
-          'details': details,
-        }
-      };
-    } else {
-      // 15% chance: Completed trade execution
-      final symbols = ['AAPL', 'TSLA', 'MSFT', 'NVDA', 'BTCUSDT'];
-      final symbol = symbols[_random.nextInt(symbols.length)];
-      final action = _random.nextBool() ? 'BUY' : 'SELL';
-      final price = 100.0 + _random.nextDouble() * 600.0;
-      final quantity = (5.0 + _random.nextInt(8) * 10).toDouble();
-      final pnl = action == 'SELL' ? (_random.nextDouble() * 450.0) - 120.0 : 0.0;
-      
-      eventData = {
-        'type': 'trade',
-        'data': {
-          'id': 't_sim_${DateTime.now().millisecondsSinceEpoch}',
-          'symbol': symbol,
-          'action': action,
-          'price': price,
-          'quantity': quantity,
-          'timestamp': DateTime.now().toIso8601String(),
-          'pnl': pnl,
-        }
-      };
-    }
-
-    logger.i('Message received: ${jsonEncode(eventData)}');
-    _controller.add(eventData);
   }
 }

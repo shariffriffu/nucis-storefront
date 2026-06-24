@@ -89,7 +89,7 @@ class AuthNotifier extends Notifier<AuthState> {
     
     try {
       final response = await DioClient.instance.post(
-        '/auth/login',
+        '/api/auth/login',
         data: {
           'mobile': mobile,
           'password': password,

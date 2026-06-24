@@ -129,3 +129,55 @@ class SystemMetrics(BaseModel):
 class AdminDashboardResponse(BaseModel):
     platform_metrics: PlatformMetrics
     system_metrics: SystemMetrics
+
+# Synced Mobile API Response Schemas
+class TradeHistoryResponse(BaseModel):
+    symbol: str
+    buy_price: float
+    sell_price: float
+    qty: int
+    pnl: float
+    exit_reason: str
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
+class OpenPositionResponse(BaseModel):
+    symbol: str
+    entry_price: float
+    market_price: float
+    qty: int
+    stop_loss: float
+    target: float
+    pnl: float
+
+    class Config:
+        from_attributes = True
+
+class ClosedPositionResponse(BaseModel):
+    symbol: str
+    entry_price: float
+    exit_price: float
+    qty: int
+    pnl: float
+    closed_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class WatchlistSymbol(BaseModel):
+    symbol: str
+    price: float
+    pct_change: float
+    rel_vol: float
+    scores: Dict[str, int]
+
+class WatchlistResponse(BaseModel):
+    watchlist: List[WatchlistSymbol]
+
+class StrategyConfigResponse(BaseModel):
+    name: str
+    enabled: bool
+    parameters: Dict[str, Any]
+

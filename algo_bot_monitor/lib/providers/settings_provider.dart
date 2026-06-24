@@ -12,7 +12,6 @@ class SettingsState {
   final bool notifyTargetAchieved;
   final bool notifySystemError;
   final bool isDarkTheme;
-  final bool isDemoMode;
 
   SettingsState({
     required this.apiEndpoint,
@@ -22,7 +21,6 @@ class SettingsState {
     required this.notifyTargetAchieved,
     required this.notifySystemError,
     required this.isDarkTheme,
-    required this.isDemoMode,
   });
 
   SettingsState copyWith({
@@ -33,7 +31,6 @@ class SettingsState {
     bool? notifyTargetAchieved,
     bool? notifySystemError,
     bool? isDarkTheme,
-    bool? isDemoMode,
   }) {
     return SettingsState(
       apiEndpoint: apiEndpoint ?? this.apiEndpoint,
@@ -43,7 +40,6 @@ class SettingsState {
       notifyTargetAchieved: notifyTargetAchieved ?? this.notifyTargetAchieved,
       notifySystemError: notifySystemError ?? this.notifySystemError,
       isDarkTheme: isDarkTheme ?? this.isDarkTheme,
-      isDemoMode: isDemoMode ?? this.isDemoMode,
     );
   }
 }
@@ -52,24 +48,37 @@ class SettingsNotifier extends Notifier<SettingsState> {
   @override
   SettingsState build() {
     final prefs = ref.watch(sharedPreferencesProvider);
+    
+    String apiEndpoint = prefs.getString('apiEndpoint') ?? ApiEndpoints.defaultBaseUrl;
+    String wsEndpoint = prefs.getString('wsEndpoint') ?? ApiEndpoints.defaultWsUrl;
+    
+    // Auto-migrate old/outdated configuration cache (e.g. referencing port 48364 or portless ws url)
+    if (apiEndpoint.contains(':48364') || apiEndpoint == 'https://13.207.1.144') {
+      apiEndpoint = ApiEndpoints.defaultBaseUrl;
+      prefs.setString('apiEndpoint', apiEndpoint);
+    }
+    if (wsEndpoint.startsWith('ws://13.207.1.144') || wsEndpoint.startsWith('wss://13.207.1.144')) {
+      if (!wsEndpoint.contains(':8000/ws')) {
+        wsEndpoint = ApiEndpoints.defaultWsUrl;
+        prefs.setString('wsEndpoint', wsEndpoint);
+      }
+    }
+
     final stateData = SettingsState(
-      apiEndpoint: prefs.getString('apiEndpoint') ?? ApiEndpoints.defaultBaseUrl,
-      wsEndpoint: prefs.getString('wsEndpoint') ?? ApiEndpoints.defaultWsUrl,
+      apiEndpoint: apiEndpoint,
+      wsEndpoint: wsEndpoint,
       notifyTradeExecuted: prefs.getBool('notifyTradeExecuted') ?? true,
       notifyStopLossHit: prefs.getBool('notifyStopLossHit') ?? true,
       notifyTargetAchieved: prefs.getBool('notifyTargetAchieved') ?? true,
       notifySystemError: prefs.getBool('notifySystemError') ?? true,
       isDarkTheme: prefs.getBool('isDarkTheme') ?? true,
-      isDemoMode: prefs.getBool('isDemoMode') ?? true,
     );
     
     // Apply configurations on boot
     DioClient.instance.configure(
-      demoMode: stateData.isDemoMode,
       baseUrl: stateData.apiEndpoint,
     );
     WebSocketClient.instance.configure(
-      demoMode: stateData.isDemoMode,
       wsUrl: stateData.wsEndpoint,
     );
 
@@ -78,11 +87,9 @@ class SettingsNotifier extends Notifier<SettingsState> {
 
   void _applyNetworkConfig() {
     DioClient.instance.configure(
-      demoMode: state.isDemoMode,
       baseUrl: state.apiEndpoint,
     );
     WebSocketClient.instance.configure(
-      demoMode: state.isDemoMode,
       wsUrl: state.wsEndpoint,
     );
   }
@@ -129,13 +136,6 @@ class SettingsNotifier extends Notifier<SettingsState> {
     final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setBool('isDarkTheme', val);
     state = state.copyWith(isDarkTheme: val);
-  }
-
-  Future<void> toggleDemoMode(bool val) async {
-    final prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setBool('isDemoMode', val);
-    state = state.copyWith(isDemoMode: val);
-    _applyNetworkConfig();
   }
 }
 
